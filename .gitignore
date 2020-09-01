@@ -1,0 +1,6 @@
+.idea/
+go.sum
+*.exe
+video-stream-dl-go
+*.log
+videos/
