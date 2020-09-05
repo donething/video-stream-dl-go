@@ -78,7 +78,6 @@ func main() {
 	}
 
 	log.Printf("已完成任务")
-	log.Println(basePath + "/" + "output" + format)
 	err = dofile.ShowInExplorer(basePath + "/" + "output" + format)
 	if err != nil {
 		log.Printf("显示文件夹出错：%s\n", err)
