@@ -92,7 +92,7 @@ func inputArgs() string {
 		return os.Args[1]
 	}
 
-	reader := bufio.NewReaderSize(os.Stdin, 65536)
+	reader := bufio.NewReader(os.Stdin)
 	log.Printf("请输入视频流的地址：")
 	url, err := reader.ReadString('\n')
 	if err != nil {
