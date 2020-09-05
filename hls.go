@@ -1,13 +1,9 @@
 package main
 
 import (
-	"errors"
-	"github.com/donething/utils-go/dohttp"
+	"fmt"
 	"strings"
-	"time"
 )
-
-var client = dohttp.New(60*time.Second, false, false)
 
 // 从.m38u文本中返回 文件列表和视频格式
 func ParsesHlsLinks(text string) ([]string, string, error) {
@@ -16,7 +12,7 @@ func ParsesHlsLinks(text string) ([]string, string, error) {
 	lines := strings.Split(text, "\n")
 	// 不是.m38u格式的文件
 	if len(lines) < 0 || lines[0] != "#EXTM3U" {
-		return nil, "", errors.New("无法解析.m38u文件")
+		return nil, "", fmt.Errorf("指定的文件不是m38u格式")
 	}
 
 	for _, line := range lines {

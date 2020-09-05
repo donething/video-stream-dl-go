@@ -1,8 +1,12 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"github.com/donething/utils-go/dohttp"
+	"github.com/gosuri/uilive"
 	"log"
+	"os"
 	"path"
 	"strings"
 	"sync"
@@ -20,6 +24,9 @@ var (
 
 	// 等待所有worker工作完毕
 	WG sync.WaitGroup
+
+	// 同一行显示输出
+	UIWriter = uilive.New()
 )
 
 // 需要初始化
@@ -29,37 +36,42 @@ func init() {
 	WG.Add(workerCount)
 	for gr := 1; gr <= workerCount; gr++ {
 		// 可以go worker(TasksCh, gr)，而不能go func(){worker(TasksCh, gr)}
-		go worker(TasksCh, gr)
+		go worker(TasksCh)
 	}
 	log.Println("工作goroutine已准备就绪")
+
+	UIWriter.Start()
 }
 
 // 工作
-func worker(tasks chan string, worker int) {
+func worker(tasks chan string) {
 	defer WG.Done()
+	doneCount := 0
 	for {
 		task, ok := <-tasks
 		if !ok {
-			log.Printf("Worker:%d 已完成下载工作", worker)
+			//log.Printf("Worker:%d 已完成下载工作", worker)
 			break
 		}
-		log.Printf("Worker:%d 收到任务，进行工作", worker)
+		//log.Printf("Worker:%d 收到任务，进行工作", worker)
 		// 实际工作
 		// 保存文件的路径
 		name := task[strings.LastIndex(task, "/")+1:]
 		if strings.Contains(name, "?") {
 			name = name[:strings.Index(name, "?")]
 		}
-		p := path.Join(basePath, name)
+		dst := path.Join(basePath, name)
 
-		_, _, err := client.DownFile(task, p, false, nil)
-		if err != nil && err != dohttp.ErrFileExist {
-			log.Printf("下载视频片段失败：%v\n", err)
+		_, err := client.Download(task, dst, false, nil)
+		if err != nil && !errors.Is(err, dohttp.ErrFileExists) {
+			log.Printf("下载视频片段(%s)失败：%v\n", task, err)
+			_ = os.Remove(dst)
 			continue
 		}
 		doneMutex.Lock()
 		DoneCount++
+		doneCount = DoneCount
 		doneMutex.Unlock()
-		log.Printf("Worker:%d 已下载完该任务[%d/%d]\n", worker, DoneCount, TotalCount)
+		_, _ = fmt.Fprintf(UIWriter, "共 %d 个视频，已下载 %d 个\n", TotalCount, doneCount)
 	}
 }
