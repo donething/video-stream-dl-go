@@ -20,7 +20,7 @@ func ParsesHlsLinks(text string) ([]string, string, error) {
 			names = append(names, line)
 		}
 	}
-	// 获取视频格式，FFmpeg合并需要指定视频后缀
+	// 获取视频格式，FFmpeg合并需要指定视频后缀（包括.号）
 	if len(names) > 0 && strings.Contains(names[0], ".") {
 		format = names[0][strings.LastIndex(names[0], "."):]
 		if strings.Contains(format, "?") {
