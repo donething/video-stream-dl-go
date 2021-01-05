@@ -2,9 +2,8 @@ package main
 
 import (
 	"errors"
-	"fmt"
+	"github.com/donething/utils-go/dofile"
 	"github.com/donething/utils-go/dohttp"
-	"github.com/gosuri/uilive"
 	"log"
 	"os"
 	"path"
@@ -24,9 +23,6 @@ var (
 
 	// 等待所有worker工作完毕
 	WG sync.WaitGroup
-
-	// 同一行显示输出
-	UIWriter = uilive.New()
 )
 
 // 需要初始化
@@ -39,8 +35,6 @@ func init() {
 		go worker(TasksCh)
 	}
 	log.Println("工作goroutine已准备就绪")
-
-	UIWriter.Start()
 }
 
 // 工作
@@ -66,12 +60,17 @@ func worker(tasks chan string) {
 		if err != nil && !errors.Is(err, dohttp.ErrFileExists) {
 			log.Printf("下载视频片段(%s)失败：%v\n", task, err)
 			_ = os.Remove(dst)
+			// 记录出错的 URL 到日志文件
+			_, err := dofile.Write([]byte(task), logPath, dofile.OAppend, 0644)
+			if err != nil {
+				log.Printf("保存错误记录(%s)时出错：%s\n", task, err)
+			}
 			continue
 		}
 		doneMutex.Lock()
 		DoneCount++
 		doneCount = DoneCount
 		doneMutex.Unlock()
-		_, _ = fmt.Fprintf(UIWriter, "共 %d 个视频，已下载 %d 个\n", TotalCount, doneCount)
+		log.Printf("共 %d 个视频，已下载 %d 个\n", TotalCount, doneCount)
 	}
 }

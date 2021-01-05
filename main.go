@@ -8,13 +8,18 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 )
 
 // 视频保存的基路径
-var basePath = "D:/Data/videos"
-var client = dohttp.New(60*time.Second, false, false)
+var (
+	// basePath = "D:/Data/videos"
+	basePath = "."
+	logPath  string
+	client   = dohttp.New(60*time.Second, false, false)
+)
 
 // 创建工作目录
 func initDLDir(folder string) {
@@ -23,7 +28,12 @@ func initDLDir(folder string) {
 	if err != nil {
 		log.Fatalf("创建基目录(%s)出错：%s\n", basePath, err)
 	}
-	log.Printf("视频保存的路径为 %s\n", basePath)
+	logPath = filepath.Join(basePath, folder, "err.log")
+	absPath, err := filepath.Abs(basePath)
+	if err != nil {
+		log.Fatalf("获取基目录(%s)的绝对路径时出错：%s\n", basePath, err)
+	}
+	log.Printf("视频保存的路径为 %s\n", absPath)
 }
 
 func main() {
@@ -53,7 +63,7 @@ func main() {
 	TotalCount = len(names)
 	log.Printf("开始下载视频片段\n")
 	for _, name := range names {
-		// .m38u中的链接可能为绝对下载地址和相对地址，当为相对下载地址时，需要和addr合并
+		// .m38u 中的链接可能为绝对下载地址或相对地址，当为相对地址时，需要和 addr 合并
 		u := name
 		if !strings.Contains(name, "//") {
 			u = addr[:strings.LastIndex(addr, "/")] + "/" + name
@@ -64,7 +74,6 @@ func main() {
 	// 完成了下载工作，关闭通道
 	close(TasksCh)
 	WG.Wait()
-	UIWriter.Stop()
 
 	// 处理下载结果
 	// 有任务下载失败
